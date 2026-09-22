@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>App Lavori — Falegnameria Gianni</title>
+<meta name="theme-color" content="#B4652E">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lavori">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ HOME ============ -->
+  <section id="view-home" class="view active">
+    <div class="home-header">
+      <div class="home-title-row">
+        <h1>Lavori</h1>
+        <div class="home-title-actions">
+          <button class="icon-btn-round" id="btn-quick-hours" aria-label="Registra ore">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <button class="icon-btn-round" id="btn-new-job" aria-label="Nuovo lavoro">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="search-bar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Cerca cliente o lavoro">
+      </div>
+      <div class="filter-chips" id="filter-chips">
+        <button class="chip active" data-status="">Tutti</button>
+        <button class="chip" data-status="Preventivo inviato">Preventivo inviato</button>
+        <button class="chip" data-status="In lavorazione">In lavorazione</button>
+        <button class="chip" data-status="Consegna">Consegna</button>
+        <button class="chip" data-status="Concluso">Concluso</button>
+        <button class="chip" data-status="Fatturato">Fatturato</button>
+      </div>
+    </div>
+    <div class="job-list" id="job-list"></div>
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-nav="home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" data-nav="new">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Nuovo lavoro</span>
+      </button>
+      <button class="nav-item" data-nav="settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Impostazioni</span>
+      </button>
+    </nav>
+  </section>
+
+  <!-- ============ JOB DETAIL ============ -->
+  <section id="view-job" class="view">
+    <div class="job-header">
+      <div class="job-header-row">
+        <button class="back-btn" id="btn-back-home" aria-label="Indietro">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="job-header-info">
+          <div class="job-header-titles">
+            <div class="job-name" id="job-name-label"></div>
+            <div class="job-client" id="job-client-label"></div>
+          </div>
+          <button class="status-badge" id="job-status-badge"></button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="timeline">Timeline</button>
+      <button class="tab-btn" data-tab="documenti">Documenti</button>
+      <button class="tab-btn" data-tab="ore">Ore</button>
+      <button class="tab-btn" data-tab="materiali">Materiali</button>
+    </div>
+
+    <div class="tab-panel active" id="panel-timeline" data-panel="timeline">
+      <div class="timeline-wrap">
+        <div class="timeline-line"></div>
+        <div class="timeline-list" id="timeline-list"></div>
+      </div>
+      <button class="fab" data-add="event" aria-label="Aggiungi evento">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div class="tab-panel" id="panel-documenti" data-panel="documenti">
+      <div class="doc-grid" id="doc-grid"></div>
+      <button class="fab" data-add="document" aria-label="Aggiungi documento">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div class="tab-panel" id="panel-ore" data-panel="ore" style="position:relative;">
+      <div class="entry-list" id="hours-list"></div>
+      <div class="totals-bar">
+        <div class="label">Totale ore <strong id="hours-total-h" style="color:var(--ink)">0 h</strong></div>
+        <div class="value" id="hours-total-cost">€0,00</div>
+      </div>
+      <button class="fab" data-add="hours" style="bottom:calc(78px + var(--safe-bottom));" aria-label="Aggiungi ore">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div class="tab-panel" id="panel-materiali" data-panel="materiali" style="position:relative;">
+      <div class="entry-list" id="materials-list"></div>
+      <div class="totals-bar">
+        <div class="label">Totale acquisti</div>
+        <div class="value" id="materials-total-cost">€0,00</div>
+      </div>
+      <button class="fab" data-add="material" style="bottom:calc(78px + var(--safe-bottom));" aria-label="Aggiungi acquisto">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section id="view-settings" class="view">
+    <div class="settings-header">
+      <button class="back-btn" id="btn-back-home-2" aria-label="Indietro">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h1>Impostazioni</h1>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <h2>Costo orario operatori</h2>
+        <div id="operator-rates"></div>
+      </div>
+      <div class="settings-section">
+        <h2>Backup dati</h2>
+        <p>I dati sono salvati solo su questo iPhone. Safari può cancellarli se l'app resta inutilizzata a lungo: esporta un backup ogni tanto e conservalo su iCloud o nei tuoi file.</p>
+        <button class="btn-primary" id="btn-export">Esporta backup</button>
+        <label class="btn-secondary" for="import-file" style="cursor:pointer;">Importa backup</label>
+        <input type="file" id="import-file" accept="application/json" style="display:none;">
+      </div>
+      <div class="settings-section">
+        <h2>Informazioni</h2>
+        <p>App Lavori — Falegnameria Gianni. Versione 1.0. I dati restano su questo dispositivo, nessun server esterno.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"><div class="max-w" id="overlay-content"></div></div>
+
+<!-- hidden file inputs for document capture -->
+<input type="file" id="input-camera" accept="image/*" capture="environment" style="display:none;">
+<input type="file" id="input-library" accept="image/*" style="display:none;">
+<input type="file" id="input-pdf" accept="application/pdf" style="display:none;">
+
+<script src="app.js"></script>
+</body>
+</html>

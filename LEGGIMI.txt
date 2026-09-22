@@ -1,0 +1,77 @@
+APP LAVORI — FALEGNAMERIA GIANNI — ISTRUZIONI RAPIDE
+=======================================================
+
+COS'E'
+-------
+Un'app per gestire i lavori: una "cartella" per ogni commessa cliente,
+con dentro documenti (preventivi, disegni, foto), una timeline di eventi,
+le ore lavorate da Fabrizio/Luigi/Marco e i materiali/acquisti fatti
+per quel lavoro. I dati restano solo su questo dispositivo (nessun
+server esterno, nessun account).
+
+PROVARLA SU QUESTO PC (per ora)
+----------------------------------
+Fai doppio click su "Avvia App.bat" (funziona come il programma dei
+Preventivi). Si apre nel browser su questo computer.
+
+IMPORTANTE — PER AVERLA DAVVERO SULL'IPHONE
+-----------------------------------------------
+Così com'è ora, l'app gira solo su QUESTO PC (indirizzo
+"127.0.0.1", cioè "questo computer stesso" — l'iPhone non può
+raggiungerlo). Per installarla sulla schermata Home dell'iPhone come
+una vera app serve che sia raggiungibile con un indirizzo https://
+da internet.
+
+La strada più semplice e gratuita: caricare questa cartella su un
+servizio di hosting statico (es. Netlify o GitHub Pages) che ti dà
+un indirizzo https:// pubblico. A quel punto, dall'iPhone:
+  1. Apri quell'indirizzo in Safari.
+  2. Tocca il pulsante Condividi (il quadratino con la freccia).
+  3. Tocca "Aggiungi a Home".
+Da quel momento hai un'icona vera sulla Home, si apre a schermo
+intero come un'app, e funziona anche offline.
+
+Fammelo sapere quando vuoi: ti guido passo passo nella pubblicazione
+(richiede solo un account gratuito sul servizio scelto — quello lo
+crei tu, io non posso farlo al posto tuo).
+
+USO DELL'APP
+--------------
+- HOME: elenco dei lavori. "+" in alto per crearne uno nuovo (cliente,
+  descrizione, preventivo totale opzionale, stato). Cerca/filtra con
+  la barra di ricerca e i filtri di stato in alto.
+- Tocca un lavoro per aprirlo. Dentro trovi 4 schede:
+    TIMELINE  — eventi del lavoro (preventivo accettato, presa in
+                carico, arrivo materiale, ecc.). "+" per aggiungerne
+                uno dalla lista predefinita o uno personalizzato.
+    DOCUMENTI — foto (scattate al momento o dalla libreria) e PDF
+                (es. il preventivo). "+" per aggiungerne uno.
+    ORE       — ore lavorate per operatore. "+" per registrarle:
+                scegli l'operatore, la data, le ore e il costo
+                orario (precompilato con la tariffa di quell'operatore,
+                modificabile lavoro per lavoro).
+    MATERIALI — acquisti fatti per il lavoro (vernice, ferramenta,
+                materiale vario) con quantità e costo. Il totale si
+                calcola da solo.
+- In cima al dettaglio lavoro, tocca il nome per modificare i dati o
+  eliminare il lavoro; tocca il badge di stato per cambiarlo.
+- La card di ogni lavoro in Home mostra i costi accumulati (ore +
+  materiali) confrontati col preventivo, con una barretta di
+  avanzamento.
+
+TARIFFE ORARIE OPERATORI
+---------------------------
+In Impostazioni puoi cambiare la tariffa oraria di base di Fabrizio,
+Luigi e Marco (default 25 €/h). È comunque sempre modificabile anche
+al momento di registrare le singole ore.
+
+BACKUP — IMPORTANTE
+----------------------
+I dati vivono solo nella memoria di questo dispositivo/browser. Ogni
+tanto, da Impostazioni, tocca "Esporta backup": scarica un file .json
+con tutto (lavori, eventi, ore, materiali, documenti). Conservalo su
+iCloud o nei tuoi file, così puoi sempre "Importa backup" per
+recuperare tutto se il telefono si perde, si rompe o svuota i dati.
+Su iPhone, Safari può cancellare i dati di un'app non aperta per
+diversi giorni: prendi l'abitudine di esportare un backup di tanto in
+tanto, soprattutto dopo un periodo di lavoro intenso.
