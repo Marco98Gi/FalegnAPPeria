@@ -6,53 +6,49 @@ COS'E'
 Un'app per gestire i lavori: una "cartella" per ogni commessa cliente,
 con dentro documenti (preventivi, disegni, foto), una timeline di eventi,
 le ore lavorate da Fabrizio/Luigi/Marco e i materiali/acquisti fatti
-per quel lavoro. I dati restano solo su questo dispositivo (nessun
-server esterno, nessun account).
+per quel lavoro. Pubblicata su GitHub Pages, installata sull'iPhone
+come app vera (Aggiungi a Home). I dati vivono su Firebase (Google) e
+sono uguali su tutti i dispositivi in cui fai accesso con le stesse
+credenziali.
 
-PROVARLA SU QUESTO PC (per ora)
-----------------------------------
-Fai doppio click su "Avvia App.bat" (funziona come il programma dei
-Preventivi). Si apre nel browser su questo computer.
+ACCESSO
+--------
+All'apertura viene chiesta email e password (quelle create nella
+console Firebase, sezione Authentication). L'accesso resta ricordato
+sul dispositivo finché non premi "Esci" in Impostazioni.
 
-IMPORTANTE — PER AVERLA DAVVERO SULL'IPHONE
------------------------------------------------
-Così com'è ora, l'app gira solo su QUESTO PC (indirizzo
-"127.0.0.1", cioè "questo computer stesso" — l'iPhone non può
-raggiungerlo). Per installarla sulla schermata Home dell'iPhone come
-una vera app serve che sia raggiungibile con un indirizzo https://
-da internet.
-
-La strada più semplice e gratuita: caricare questa cartella su un
-servizio di hosting statico (es. Netlify o GitHub Pages) che ti dà
-un indirizzo https:// pubblico. A quel punto, dall'iPhone:
-  1. Apri quell'indirizzo in Safari.
-  2. Tocca il pulsante Condividi (il quadratino con la freccia).
-  3. Tocca "Aggiungi a Home".
-Da quel momento hai un'icona vera sulla Home, si apre a schermo
-intero come un'app, e funziona anche offline.
-
-Fammelo sapere quando vuoi: ti guido passo passo nella pubblicazione
-(richiede solo un account gratuito sul servizio scelto — quello lo
-crei tu, io non posso farlo al posto tuo).
+PROVARLA SU QUESTO PC
+------------------------
+Fai doppio click su "Avvia App.bat". Si apre nel browser su questo
+computer, collegata comunque allo stesso database Firebase.
 
 USO DELL'APP
 --------------
-- HOME: elenco dei lavori. "+" in alto per crearne uno nuovo (cliente,
-  descrizione, preventivo totale opzionale, stato). Cerca/filtra con
-  la barra di ricerca e i filtri di stato in alto.
+- HOME: elenco dei lavori. "+" a destra per crearne uno nuovo (cliente,
+  descrizione, preventivo totale opzionale, stato). L'icona a orologio
+  a sinistra è "Registra ore": puoi segnare ore lavorate al volo su un
+  lavoro esistente (basta scriverne il nome) o su un "lavoro extra" che
+  viene creato al momento se non corrisponde a nessuno già inserito.
+  Cerca/filtra con la barra di ricerca e i filtri di stato in alto.
 - Tocca un lavoro per aprirlo. Dentro trovi 4 schede:
     TIMELINE  — eventi del lavoro (preventivo accettato, presa in
-                carico, arrivo materiale, ecc.). "+" per aggiungerne
-                uno dalla lista predefinita o uno personalizzato.
-    DOCUMENTI — foto (scattate al momento o dalla libreria) e PDF
-                (es. il preventivo). "+" per aggiungerne uno.
-    ORE       — ore lavorate per operatore. "+" per registrarle:
-                scegli l'operatore, la data, le ore e il costo
-                orario (precompilato con la tariffa di quell'operatore,
-                modificabile lavoro per lavoro).
-    MATERIALI — acquisti fatti per il lavoro (vernice, ferramenta,
-                materiale vario) con quantità e costo. Il totale si
-                calcola da solo.
+                carico, arrivo materiale, ecc.), ognuno con la sua
+                data (modificabile, utile per eventi registrati in
+                ritardo). "Ordine materiale effettuato" chiede subito
+                cosa hai ordinato e lo mette in Materiali come
+                "Ordinato" (non conteggiato); quando poi arriva,
+                "Arrivo materiale" te lo fa scegliere dall'elenco di
+                quelli in attesa e lo conta nei costi.
+    DOCUMENTI — foto (scattate al momento o dalla libreria, compresse
+                automaticamente) e PDF (es. il preventivo). "+" per
+                aggiungerne uno.
+    ORE       — ore lavorate per operatore, inserite con una tastierina
+                numerica (1-9, virgola per i mezzi). Costo orario
+                precompilato con la tariffa dell'operatore, modificabile
+                lavoro per lavoro.
+    MATERIALI — acquisti fatti per il lavoro (categoria Materiale /
+                Ferramenta / Verniciatura), quantità e costo. Il totale
+                si calcola da solo.
 - In cima al dettaglio lavoro, tocca il nome per modificare i dati o
   eliminare il lavoro; tocca il badge di stato per cambiarlo.
 - La card di ogni lavoro in Home mostra i costi accumulati (ore +
@@ -65,13 +61,24 @@ In Impostazioni puoi cambiare la tariffa oraria di base di Fabrizio,
 Luigi e Marco (default 25 €/h). È comunque sempre modificabile anche
 al momento di registrare le singole ore.
 
-BACKUP — IMPORTANTE
-----------------------
-I dati vivono solo nella memoria di questo dispositivo/browser. Ogni
-tanto, da Impostazioni, tocca "Esporta backup": scarica un file .json
-con tutto (lavori, eventi, ore, materiali, documenti). Conservalo su
-iCloud o nei tuoi file, così puoi sempre "Importa backup" per
-recuperare tutto se il telefono si perde, si rompe o svuota i dati.
-Su iPhone, Safari può cancellare i dati di un'app non aperta per
-diversi giorni: prendi l'abitudine di esportare un backup di tanto in
-tanto, soprattutto dopo un periodo di lavoro intenso.
+BACKUP
+-------
+Anche se i dati sono su Firebase (quindi al sicuro anche se perdi il
+telefono), da Impostazioni → "Esporta backup" puoi comunque scaricare
+ogni tanto una copia .json di tutto, come ulteriore rete di sicurezza.
+"Importa backup" la ripristina (sostituisce i dati attuali).
+
+LIMITE FOTO/DOCUMENTI
+------------------------
+Senza Firebase Storage attivo, foto e PDF vengono salvati direttamente
+nel database: le foto vengono compresse automaticamente, ma un singolo
+file non può superare circa 850 KB. Un PDF molto pesante potrebbe
+essere rifiutato — in quel caso serve attivare Firebase Storage (piano
+Blaze, resta comunque gratuito per l'uso che ne faresti).
+
+PUBBLICARE AGGIORNAMENTI
+----------------------------
+Ogni volta che l'app viene modificata, i file cambiati vanno ricaricati
+sul repository GitHub (FalegnAPPeria) con "Add file → Upload files".
+Se cambia solo il codice, basta ricaricare la pagina sul telefono. Se
+cambia l'icona, serve rimuovere e rifare "Aggiungi a Home".
