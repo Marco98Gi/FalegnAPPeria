@@ -246,7 +246,25 @@ button {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  position: relative;
 }
+
+.job-card-delete {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(43,33,26,0.25);
+  z-index: 2;
+}
+.job-card-delete:active { transform: scale(0.92); }
 .job-card:active { opacity: 0.85; }
 
 .job-card-top {
@@ -382,6 +400,22 @@ button {
 .doc-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .doc-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .doc-del { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 999px; background: rgba(43,33,26,0.55); color: #fff; display: flex; align-items: center; justify-content: center; }
+.note-thumb {
+  background: var(--accent-light);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px;
+  text-align: center;
+}
+.note-icon { color: var(--accent); }
+.note-title {
+  font-size: 12.5px; font-weight: 700; color: var(--ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.note-date { font-size: 11px; color: var(--ink-muted); }
+
 .doc-add-tile {
   border-radius: 16px; padding: 12px; border: 2px dashed #DCCFBD;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 158px; color: var(--ink-muted);
@@ -460,7 +494,7 @@ button {
 .field-label { font-size: 12.5px; font-weight: 700; color: var(--ink-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
 .field-input {
   padding: 12px 14px; border-radius: 12px; background: var(--bg); border: 1px solid transparent;
-  font-size: 14.5px; width: 100%; outline: none;
+  font-size: 14.5px; width: 100%; outline: none; font-family: inherit;
 }
 .field-input:focus { border-color: var(--accent); background: var(--card); }
 

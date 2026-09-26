@@ -71,7 +71,9 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     plusCircle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
     paint: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9 6 5 10.5 5 14.5A7 7 0 0 0 19 14.5C19 10.5 15 6 12 2z"/></svg>',
     wrench: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L2 19l3 3 7.3-7.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2z"/></svg>',
-    box: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>'
+    box: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+    x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>',
+    note: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>'
   };
 
   /* ---------------- Firestore data layer ---------------- */
@@ -338,6 +340,7 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
         const title = j.titolo ? `${escapeHtml(j.titolo)} — ${escapeHtml(j.cliente)}` : escapeHtml(j.cliente);
         return `
           <div class="job-card" data-job-id="${j.id}">
+            <button class="job-card-delete" data-delete-job="${j.id}" aria-label="Elimina lavoro">${ICONS.x}</button>
             <div class="job-card-top">
               <div class="job-card-title">${title}</div>
               <div class="status-badge ${STATUS_CLASS[j.stato] || "status-preventivo"}">${escapeHtml(j.stato)}</div>
@@ -360,6 +363,7 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
         const totalH = hours.reduce((s, h) => s + (Number(h.ore) || 0), 0);
         return `
           <div class="job-card extra" data-job-id="${j.id}">
+            <button class="job-card-delete" data-delete-job="${j.id}" aria-label="Elimina lavoro">${ICONS.x}</button>
             <div class="job-card-top">
               <div class="job-card-title">${escapeHtml(j.cliente)}</div>
             </div>
@@ -376,6 +380,18 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     listEl.innerHTML = html;
     listEl.querySelectorAll(".job-card").forEach((card) => {
       card.addEventListener("click", () => openJob(card.dataset.jobId));
+    });
+    listEl.querySelectorAll("[data-delete-job]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.deleteJob;
+        const job = await dbGet("jobs", id);
+        const name = job ? (job.extra ? job.cliente : jobDisplayName(job)) : "questo lavoro";
+        if (!confirm(`Eliminare definitivamente "${name}" e tutti i suoi dati (eventi, ore, materiali, documenti)?`)) return;
+        await deleteJobCascade(id);
+        await renderHome();
+        showToast("Lavoro eliminato");
+      });
     });
   }
 
@@ -693,12 +709,26 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     if (docs.length === 0) {
       grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:30px 0;">Nessun documento ancora.</div>` + addTile;
     } else {
-      grid.innerHTML = docs.map((d) => `
-        <div class="doc-card" data-doc-id="${d.id}">
-          <div class="doc-thumb">${d.tipo === "image" ? `<img src="${d.dataUrl}" alt="">` : ICONS.doc}</div>
-          <div class="doc-name">${escapeHtml(d.nome)}</div>
-          <button class="doc-del" data-del-doc="${d.id}">${ICONS.trash}</button>
-        </div>`).join("") + addTile;
+      grid.innerHTML = docs.map((d) => {
+        if (d.tipo === "nota") {
+          return `
+            <div class="doc-card note-card" data-doc-id="${d.id}" data-note="${d.id}">
+              <div class="doc-thumb note-thumb">
+                <div class="note-icon">${ICONS.note}</div>
+                <div class="note-title">${escapeHtml(d.titolo || "Nota")}</div>
+                <div class="note-date">${formatDateISO((d.createdAt || "").slice(0, 10))}</div>
+              </div>
+              <div class="doc-name">${escapeHtml(d.titolo || "Nota")}</div>
+              <button class="doc-del" data-del-doc="${d.id}">${ICONS.trash}</button>
+            </div>`;
+        }
+        return `
+          <div class="doc-card" data-doc-id="${d.id}">
+            <div class="doc-thumb">${d.tipo === "image" ? `<img src="${d.dataUrl}" alt="">` : ICONS.doc}</div>
+            <div class="doc-name">${escapeHtml(d.nome)}</div>
+            <button class="doc-del" data-del-doc="${d.id}">${ICONS.trash}</button>
+          </div>`;
+      }).join("") + addTile;
     }
     grid.querySelectorAll("[data-del-doc]").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
@@ -706,6 +736,12 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
         if (!confirm("Eliminare questo documento?")) return;
         await dbDelete("documents", btn.dataset.delDoc);
         await renderDocumenti(jobId);
+      });
+    });
+    grid.querySelectorAll("[data-note]").forEach((card) => {
+      card.addEventListener("click", async () => {
+        const note = await dbGet("documents", card.dataset.note);
+        if (note) openNoteViewSheet(jobId, note);
       });
     });
     const addInline = document.getElementById("doc-add-inline");
@@ -729,6 +765,10 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
           <div class="icon-circle">${ICONS.doc}</div>
           <span>Importa PDF</span>${ICONS.chevronRight}
         </button>
+        <button class="action-row" id="act-note">
+          <div class="icon-circle">${ICONS.note}</div>
+          <span>Aggiungi nota</span>${ICONS.chevronRight}
+        </button>
         <button class="btn-secondary" id="btn-cancel-doc">Annulla</button>
       </div>
     `);
@@ -736,6 +776,66 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     document.getElementById("act-camera").addEventListener("click", () => document.getElementById("input-camera").click());
     document.getElementById("act-library").addEventListener("click", () => document.getElementById("input-library").click());
     document.getElementById("act-pdf").addEventListener("click", () => document.getElementById("input-pdf").click());
+    document.getElementById("act-note").addEventListener("click", () => openNoteFormSheet(jobId));
+  }
+
+  function openNoteFormSheet(jobId, existing) {
+    const isEdit = !!(existing && existing.id);
+    openSheet(`
+      <div class="sheet">
+        <div class="sheet-grabber"></div>
+        <div class="sheet-title">${isEdit ? "Modifica nota" : "Nuova nota"}</div>
+        <div class="form-scroll">
+          <div>
+            <div class="field-label">Titolo</div>
+            <input class="field-input" id="f-note-title" placeholder="es. Misure mobile ingresso" autocomplete="off" value="${escapeHtml(existing?.titolo || "")}">
+          </div>
+          <div>
+            <div class="field-label">Nota</div>
+            <textarea class="field-input" id="f-note-text" rows="6" placeholder="Scrivi qui le indicazioni…" style="resize:vertical;">${escapeHtml(existing?.testo || "")}</textarea>
+          </div>
+          <button class="btn-primary" id="btn-save-note">Salva</button>
+        </div>
+      </div>
+    `);
+    document.getElementById("f-note-title").focus();
+    document.getElementById("btn-save-note").addEventListener("click", async () => {
+      const titolo = document.getElementById("f-note-title").value.trim();
+      const testo = document.getElementById("f-note-text").value.trim();
+      if (!titolo && !testo) { showToast("Scrivi almeno un titolo o un testo"); return; }
+      if (isEdit) {
+        await dbPut("documents", { ...existing, titolo, testo });
+      } else {
+        await dbAdd("documents", { jobId, tipo: "nota", titolo, testo, createdAt: new Date().toISOString() });
+      }
+      await touchJob(jobId);
+      closeSheet();
+      await renderDocumenti(jobId);
+      showToast(isEdit ? "Nota aggiornata" : "Nota aggiunta");
+    });
+  }
+
+  function openNoteViewSheet(jobId, note) {
+    openSheet(`
+      <div class="sheet">
+        <div class="sheet-grabber"></div>
+        <div class="sheet-title">${escapeHtml(note.titolo || "Nota")}</div>
+        <div class="form-scroll">
+          <div class="timeline-date" style="margin-top:-8px;">${formatDateISO((note.createdAt || "").slice(0, 10))}</div>
+          <div style="white-space:pre-wrap;font-size:15px;line-height:1.5;">${escapeHtml(note.testo || "")}</div>
+          <button class="btn-primary" id="btn-edit-note">Modifica</button>
+          <button class="btn-secondary" id="btn-delete-note" style="color:var(--danger);border-color:var(--danger-bg);">Elimina nota</button>
+        </div>
+      </div>
+    `);
+    document.getElementById("btn-edit-note").addEventListener("click", () => openNoteFormSheet(jobId, note));
+    document.getElementById("btn-delete-note").addEventListener("click", async () => {
+      if (!confirm("Eliminare questa nota?")) return;
+      await dbDelete("documents", note.id);
+      closeSheet();
+      await renderDocumenti(jobId);
+      showToast("Nota eliminata");
+    });
   }
 
   async function handleFileInput(file, tipo) {
@@ -1344,4 +1444,13 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
       navigator.serviceWorker.register("sw.js").catch(() => {});
     });
   }
+
+  // Rete di sicurezza: se un'azione (salvataggio, eliminazione, ecc.) fallisce
+  // per un errore imprevisto, mostra sempre un messaggio invece di restare muta.
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event.reason;
+    const msg = (reason && reason.message) ? reason.message : String(reason);
+    console.error("Errore non gestito:", reason);
+    showToast("Errore: " + msg);
+  });
 })();
