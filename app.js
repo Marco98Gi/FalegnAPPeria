@@ -1,5 +1,29 @@
 /* App Lavori — Falegnameria Gianni
-   Vanilla JS, no build step. Dati salvati in IndexedDB, solo su questo dispositivo. */
+   Vanilla JS, no build step. Dati salvati su Firebase (Firestore + Auth),
+   cosi' restano sincronizzati tra i dispositivi di Marco. */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore, enableIndexedDbPersistence,
+  collection, doc, getDoc, getDocs, addDoc, setDoc, deleteDoc, query, where
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCkzR6eV_rdheO8Cm8E6g2h64OzkPi-mgc",
+  authDomain: "falegnapperia.firebaseapp.com",
+  projectId: "falegnapperia",
+  storageBucket: "falegnapperia.firebasestorage.app",
+  messagingSenderId: "644027077639",
+  appId: "1:644027077639:web:9e1b386d9b46d8921bc6a2"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const fsdb = getFirestore(firebaseApp);
+enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile (es. piu' schede aperte): non blocca l'app */ });
 
 (function () {
   "use strict";
@@ -50,89 +74,52 @@
     box: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>'
   };
 
-  /* ---------------- IndexedDB ---------------- */
+  /* ---------------- Firestore data layer ---------------- */
+  /* Ogni dato vive sotto users/{uid}/{collezione}/{docId} - uid = utente Firebase loggato. */
 
-  const DB_NAME = "falegnameria-lavori";
-  const DB_VERSION = 1;
-  let dbPromise = null;
+  let currentUid = null;
 
-  function openDB() {
-    if (dbPromise) return dbPromise;
-    dbPromise = new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains("jobs")) {
-          db.createObjectStore("jobs", { keyPath: "id", autoIncrement: true });
-        }
-        ["events", "hours", "materials", "documents"].forEach((name) => {
-          if (!db.objectStoreNames.contains(name)) {
-            const store = db.createObjectStore(name, { keyPath: "id", autoIncrement: true });
-            store.createIndex("jobId", "jobId", { unique: false });
-          }
-        });
-        if (!db.objectStoreNames.contains("settings")) {
-          db.createObjectStore("settings", { keyPath: "key" });
-        }
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    return dbPromise;
+  function userCol(name) {
+    return collection(fsdb, "users", currentUid, name);
+  }
+  function userDocRef(name, id) {
+    return doc(fsdb, "users", currentUid, name, String(id));
   }
 
-  function tx(storeNames, mode) {
-    return openDB().then((db) => db.transaction(storeNames, mode));
+  async function dbAll(storeName, indexName, indexValue) {
+    const ref = indexName ? query(userCol(storeName), where(indexName, "==", indexValue)) : userCol(storeName);
+    const snap = await getDocs(ref);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
 
-  function dbAll(storeName, indexName, indexValue) {
-    return tx([storeName], "readonly").then((t) => new Promise((resolve, reject) => {
-      const store = t.objectStore(storeName);
-      const source = indexName ? store.index(indexName) : store;
-      const req = indexValue !== undefined ? source.getAll(indexValue) : source.getAll();
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    }));
+  async function dbGet(storeName, id) {
+    if (id === undefined || id === null) return undefined;
+    const snap = await getDoc(userDocRef(storeName, id));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : undefined;
   }
 
-  function dbGet(storeName, id) {
-    return tx([storeName], "readonly").then((t) => new Promise((resolve, reject) => {
-      const req = t.objectStore(storeName).get(id);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    }));
+  async function dbAdd(storeName, obj) {
+    const ref = await addDoc(userCol(storeName), obj);
+    return ref.id;
   }
 
-  function dbAdd(storeName, obj) {
-    return tx([storeName], "readwrite").then((t) => new Promise((resolve, reject) => {
-      const req = t.objectStore(storeName).add(obj);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    }));
+  async function dbPut(storeName, obj) {
+    const { id, ...rest } = obj;
+    await setDoc(userDocRef(storeName, id), rest);
+    return id;
   }
 
-  function dbPut(storeName, obj) {
-    return tx([storeName], "readwrite").then((t) => new Promise((resolve, reject) => {
-      const req = t.objectStore(storeName).put(obj);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    }));
+  async function dbDelete(storeName, id) {
+    await deleteDoc(userDocRef(storeName, id));
   }
 
-  function dbDelete(storeName, id) {
-    return tx([storeName], "readwrite").then((t) => new Promise((resolve, reject) => {
-      const req = t.objectStore(storeName).delete(id);
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
-    }));
-  }
-
-  function getSetting(key, fallback) {
-    return dbGet("settings", key).then((row) => (row ? row.value : fallback));
+  async function getSetting(key, fallback) {
+    const snap = await getDoc(userDocRef("settings", key));
+    return snap.exists() ? snap.data().value : fallback;
   }
 
   function setSetting(key, value) {
-    return dbPut("settings", { key, value });
+    return setDoc(userDocRef("settings", key), { value });
   }
 
   function getOperatorRate(name) {
@@ -191,6 +178,45 @@
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  // Firestore ha un limite di 1 MB per documento: le foto vengono ridimensionate/compresse
+  // lato telefono prima di essere salvate, cosi' restano ben al di sotto del limite.
+  const MAX_DOC_BYTES = 850000;
+
+  function dataUrlByteLength(dataUrl) {
+    const base64 = dataUrl.split(",")[1] || "";
+    return Math.ceil(base64.length * 0.75);
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  async function compressImageDataUrl(dataUrl, maxDim = 1600, quality = 0.75) {
+    const img = await loadImage(dataUrl);
+    let { width, height } = img;
+    if (width > maxDim || height > maxDim) {
+      const scale = maxDim / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+    let q = quality;
+    let out = canvas.toDataURL("image/jpeg", q);
+    while (dataUrlByteLength(out) > MAX_DOC_BYTES && q > 0.35) {
+      q -= 0.1;
+      out = canvas.toDataURL("image/jpeg", q);
+    }
+    return out;
   }
 
   let toastTimer = null;
@@ -349,7 +375,7 @@
 
     listEl.innerHTML = html;
     listEl.querySelectorAll(".job-card").forEach((card) => {
-      card.addEventListener("click", () => openJob(Number(card.dataset.jobId)));
+      card.addEventListener("click", () => openJob(card.dataset.jobId));
     });
   }
 
@@ -502,7 +528,7 @@
 
   async function renderTimeline(jobId) {
     const events = await dbAll("events", "jobId", jobId);
-    events.sort((a, b) => (a.date || "").localeCompare(b.date || "") || a.id - b.id);
+    events.sort((a, b) => (a.date || "").localeCompare(b.date || "") || String(a.id).localeCompare(String(b.id)));
     const listEl = document.getElementById("timeline-list");
     if (events.length === 0) {
       listEl.innerHTML = `<div class="empty-state" style="padding:20px 0;text-align:left;">Nessun evento ancora.<br>Tocca + per aggiungere il primo.</div>`;
@@ -524,7 +550,7 @@
     listEl.querySelectorAll("[data-del-event]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         if (!confirm("Eliminare questo evento?")) return;
-        await dbDelete("events", Number(btn.dataset.delEvent));
+        await dbDelete("events", btn.dataset.delEvent);
         await renderTimeline(jobId);
       });
     });
@@ -641,7 +667,7 @@
     `);
     overlayContent.querySelectorAll("[data-pending]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const m = await dbGet("materials", Number(btn.dataset.pending));
+        const m = await dbGet("materials", btn.dataset.pending);
         if (m) openMaterialArrivalForm(jobId, m);
       });
     });
@@ -678,7 +704,7 @@
       btn.addEventListener("click", async (e) => {
         e.stopPropagation();
         if (!confirm("Eliminare questo documento?")) return;
-        await dbDelete("documents", Number(btn.dataset.delDoc));
+        await dbDelete("documents", btn.dataset.delDoc);
         await renderDocumenti(jobId);
       });
     });
@@ -715,7 +741,15 @@
   async function handleFileInput(file, tipo) {
     if (!file) return;
     const jobId = state.currentJobId;
-    const dataUrl = await fileToDataURL(file);
+    let dataUrl = await fileToDataURL(file);
+    if (tipo !== "pdf") {
+      showToast("Compressione foto in corso…");
+      dataUrl = await compressImageDataUrl(dataUrl);
+    }
+    if (dataUrlByteLength(dataUrl) > MAX_DOC_BYTES) {
+      showToast("File troppo pesante per essere salvato (limite ~850 KB)");
+      return;
+    }
     await dbAdd("documents", { jobId, nome: file.name || (tipo === "pdf" ? "documento.pdf" : "foto.jpg"), tipo: tipo === "pdf" ? "pdf" : "image", dataUrl, createdAt: new Date().toISOString() });
     await touchJob(jobId);
     closeSheet();
@@ -731,7 +765,7 @@
 
   async function renderOre(jobId) {
     const hours = await dbAll("hours", "jobId", jobId);
-    hours.sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.id - a.id);
+    hours.sort((a, b) => (b.date || "").localeCompare(a.date || "") || String(b.id).localeCompare(String(a.id)));
     const listEl = document.getElementById("hours-list");
     if (hours.length === 0) {
       listEl.innerHTML = `<div class="empty-state" style="padding:30px 0;">Nessuna ora registrata ancora.</div>`;
@@ -766,10 +800,40 @@
     listEl.querySelectorAll("[data-del-hours]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         if (!confirm("Eliminare questa registrazione ore?")) return;
-        await dbDelete("hours", Number(btn.dataset.delHours));
+        await dbDelete("hours", btn.dataset.delHours);
         await renderOre(jobId);
       });
     });
+  }
+
+  function hoursKeypadHtml(idPrefix) {
+    const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "back", "0", ","];
+    const keyLabel = { back: "⌫" };
+    return `
+      <div class="hours-keypad">
+        <div class="hours-display" id="${idPrefix}-display">1 h</div>
+        <div class="keypad-grid" id="${idPrefix}-keys">
+          ${keys.map((k) => `<button type="button" class="keypad-key ${k === "back" || k === "," ? "keypad-key-alt" : ""}" data-k="${k}">${keyLabel[k] || k}</button>`).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function wireHoursKeypad(idPrefix, initial) {
+    let buffer = initial ? formatNum(initial) : "";
+    const displayEl = document.getElementById(idPrefix + "-display");
+    function render() { displayEl.textContent = (buffer === "" ? "0" : buffer) + " h"; }
+    render();
+    document.getElementById(idPrefix + "-keys").querySelectorAll("[data-k]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const k = btn.dataset.k;
+        if (k === "back") { buffer = buffer.slice(0, -1); }
+        else if (k === ",") { if (!buffer.includes(",")) buffer = (buffer === "" ? "0" : buffer) + ","; }
+        else if (buffer.length < 5) { buffer += k; }
+        render();
+      });
+    });
+    return { get: () => parseFloat(buffer.replace(",", ".")) || 0 };
   }
 
   async function openAddHoursSheet(jobId) {
@@ -790,29 +854,20 @@
             <div class="field-label">Data</div>
             <input class="field-input" id="f-hours-date" type="date" value="${todayISO()}">
           </div>
-          <div class="field-row2">
-            <div>
-              <div class="field-label">Ore</div>
-              <div class="stepper">
-                <button class="stepper-btn" id="hours-minus">−</button>
-                <div class="stepper-val" id="hours-val">1</div>
-                <button class="stepper-btn" id="hours-plus">+</button>
-              </div>
-            </div>
-            <div>
-              <div class="field-label">Costo orario</div>
-              <input class="field-input" id="f-hours-rate" type="number" inputmode="decimal" step="0.5" value="${rate}">
-            </div>
+          <div>
+            <div class="field-label">Ore</div>
+            ${hoursKeypadHtml("hours")}
+          </div>
+          <div>
+            <div class="field-label">Costo orario</div>
+            <input class="field-input" id="f-hours-rate" type="number" inputmode="decimal" step="0.5" value="${rate}">
           </div>
           <button class="btn-primary" id="btn-save-hours">Salva</button>
         </div>
       </div>
     `);
-    let hoursVal = 1;
+    const hoursCtl = wireHoursKeypad("hours", 1);
     let currentOp = selectedOperator;
-    const valEl = document.getElementById("hours-val");
-    document.getElementById("hours-minus").addEventListener("click", () => { hoursVal = Math.max(0.5, hoursVal - 0.5); valEl.textContent = formatNum(hoursVal); });
-    document.getElementById("hours-plus").addEventListener("click", () => { hoursVal = hoursVal + 0.5; valEl.textContent = formatNum(hoursVal); });
     overlayContent.querySelectorAll("[data-op]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         currentOp = btn.dataset.op;
@@ -823,6 +878,7 @@
     document.getElementById("btn-save-hours").addEventListener("click", async () => {
       const date = document.getElementById("f-hours-date").value || todayISO();
       const costoOrario = parseFloat(document.getElementById("f-hours-rate").value) || 0;
+      const hoursVal = hoursCtl.get();
       if (hoursVal <= 0) { showToast("Inserisci un numero di ore valido"); return; }
       await dbAdd("hours", { jobId, operatore: currentOp, date, ore: hoursVal, costoOrario });
       state.lastOperator = currentOp;
@@ -861,30 +917,21 @@
               ${allJobs.map((j) => `<option value="${escapeHtml(jobDisplayName(j))}"></option>`).join("")}
             </datalist>
           </div>
-          <div class="field-row2">
-            <div>
-              <div class="field-label">Ore</div>
-              <div class="stepper">
-                <button class="stepper-btn" id="qh-hours-minus">−</button>
-                <div class="stepper-val" id="qh-hours-val">1</div>
-                <button class="stepper-btn" id="qh-hours-plus">+</button>
-              </div>
-            </div>
-            <div>
-              <div class="field-label">Costo orario</div>
-              <input class="field-input" id="f-qh-rate" type="number" inputmode="decimal" step="0.5" value="${rate}">
-            </div>
+          <div>
+            <div class="field-label">Ore</div>
+            ${hoursKeypadHtml("qh-hours")}
+          </div>
+          <div>
+            <div class="field-label">Costo orario</div>
+            <input class="field-input" id="f-qh-rate" type="number" inputmode="decimal" step="0.5" value="${rate}">
           </div>
           <button class="btn-primary" id="btn-save-qh">Salva</button>
         </div>
       </div>
     `);
     document.getElementById("f-qh-job").focus();
-    let hoursVal = 1;
+    const hoursCtl = wireHoursKeypad("qh-hours", 1);
     let currentOp = selectedOperator;
-    const valEl = document.getElementById("qh-hours-val");
-    document.getElementById("qh-hours-minus").addEventListener("click", () => { hoursVal = Math.max(0.5, hoursVal - 0.5); valEl.textContent = formatNum(hoursVal); });
-    document.getElementById("qh-hours-plus").addEventListener("click", () => { hoursVal = hoursVal + 0.5; valEl.textContent = formatNum(hoursVal); });
     overlayContent.querySelectorAll("[data-op]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         currentOp = btn.dataset.op;
@@ -897,6 +944,7 @@
       if (!lavoroText) { showToast("Inserisci il lavoro"); return; }
       const date = document.getElementById("f-qh-date").value || todayISO();
       const costoOrario = parseFloat(document.getElementById("f-qh-rate").value) || 0;
+      const hoursVal = hoursCtl.get();
       if (hoursVal <= 0) { showToast("Inserisci un numero di ore valido"); return; }
 
       const match = allJobs.find((j) => jobDisplayName(j).trim().toLowerCase() === lavoroText.toLowerCase());
@@ -934,7 +982,7 @@
       const pa = a.stato === "ordinato" ? 0 : 1;
       const pb = b.stato === "ordinato" ? 0 : 1;
       if (pa !== pb) return pa - pb;
-      return b.id - a.id;
+      return String(b.id).localeCompare(String(a.id));
     });
     const listEl = document.getElementById("materials-list");
     if (materials.length === 0) {
@@ -967,13 +1015,13 @@
       btn.addEventListener("click", async (e) => {
         e.stopPropagation();
         if (!confirm("Eliminare questo acquisto?")) return;
-        await dbDelete("materials", Number(btn.dataset.delMat));
+        await dbDelete("materials", btn.dataset.delMat);
         await renderMateriali(jobId);
       });
     });
     listEl.querySelectorAll("[data-arrive-mat]").forEach((row) => {
       row.addEventListener("click", async () => {
-        const m = await dbGet("materials", Number(row.dataset.arriveMat));
+        const m = await dbGet("materials", row.dataset.arriveMat);
         if (m) openMaterialArrivalForm(jobId, m);
       });
     });
@@ -1139,24 +1187,39 @@
     showToast("Backup esportato");
   }
 
+  async function clearCollection(storeName) {
+    const rows = await dbAll(storeName);
+    for (const row of rows) await dbDelete(storeName, row.id);
+  }
+
   async function importBackup(file) {
     const text = await file.text();
     let data;
     try { data = JSON.parse(text); } catch (e) { showToast("File non valido"); return; }
     if (!data || !Array.isArray(data.jobs)) { showToast("File non valido"); return; }
-    if (!confirm("Importare questo backup? I dati attuali su questo dispositivo verranno sostituiti.")) return;
+    if (!confirm("Importare questo backup? I dati attuali su Firebase verranno sostituiti.")) return;
 
+    showToast("Importazione in corso…");
     const stores = ["jobs", "events", "hours", "materials", "documents"];
-    const db = await openDB();
-    await new Promise((resolve, reject) => {
-      const t = db.transaction(stores, "readwrite");
-      stores.forEach((s) => t.objectStore(s).clear());
-      t.oncomplete = resolve;
-      t.onerror = () => reject(t.error);
-    });
+    for (const s of stores) await clearCollection(s);
+
+    let skipped = 0;
     for (const s of stores) {
       for (const row of data[s] || []) {
-        await dbPut(s, row);
+        const record = { ...row, id: String(row.id) };
+        if (record.jobId !== undefined) record.jobId = String(record.jobId);
+        if (s === "documents" && record.dataUrl) {
+          const size = dataUrlByteLength(record.dataUrl);
+          if (size > MAX_DOC_BYTES) {
+            if (record.tipo === "image") {
+              try { record.dataUrl = await compressImageDataUrl(record.dataUrl); }
+              catch (e) { skipped++; continue; }
+            } else {
+              skipped++; continue; // PDF troppo pesante senza Firebase Storage
+            }
+          }
+        }
+        await dbPut(s, record);
       }
     }
     if (data.rates) {
@@ -1164,7 +1227,7 @@
         await setSetting("rate_" + op, data.rates[op]);
       }
     }
-    showToast("Backup importato");
+    showToast(skipped > 0 ? `Backup importato (${skipped} documenti troppo pesanti saltati)` : "Backup importato");
     await renderSettings();
     goHome();
   }
@@ -1221,15 +1284,7 @@
     e.target.value = "";
   });
 
-  /* ---------------- Login ---------------- */
-
-  const AUTH_HASH = "90acb1aa4a3122d41dbb4ad90c16e4f94c0462ec0169c5e35bd93268dbc630d6";
-
-  async function sha256Hex(str) {
-    const enc = new TextEncoder().encode(str);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
+  /* ---------------- Login (Firebase Auth) ---------------- */
 
   function bootApp() {
     showView("home");
@@ -1240,26 +1295,25 @@
     const userEl = document.getElementById("f-login-user");
     const passEl = document.getElementById("f-login-pass");
     const errEl = document.getElementById("login-error");
-    const user = userEl.value.trim().toLowerCase();
+    const btn = document.getElementById("btn-login");
+    const email = userEl.value.trim();
     const pass = passEl.value;
-    if (!user || !pass) { errEl.textContent = "Inserisci utente e password"; return; }
-    const hash = await sha256Hex(`${user}:${pass}`);
-    if (hash === AUTH_HASH) {
-      localStorage.setItem("auth_ok", "1");
-      errEl.textContent = "";
+    if (!email || !pass) { errEl.textContent = "Inserisci email e password"; return; }
+    btn.disabled = true;
+    errEl.textContent = "";
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
       passEl.value = "";
-      bootApp();
-    } else {
-      errEl.textContent = "Utente o password errati";
+      // onAuthStateChanged si occupa di avviare l'app dopo il login riuscito
+    } catch (err) {
+      errEl.textContent = "Email o password errati";
+    } finally {
+      btn.disabled = false;
     }
   }
 
   function logout() {
-    localStorage.removeItem("auth_ok");
-    document.getElementById("f-login-user").value = "";
-    document.getElementById("f-login-pass").value = "";
-    document.getElementById("login-error").textContent = "";
-    showView("login");
+    signOut(auth);
   }
 
   document.getElementById("btn-login").addEventListener("click", tryLogin);
@@ -1271,16 +1325,19 @@
 
   /* ---------------- Boot ---------------- */
 
-  openDB().catch((err) => {
-    console.error("Errore apertura database", err);
-    showToast("Errore nell'apertura del database");
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUid = user.uid;
+      bootApp();
+    } else {
+      currentUid = null;
+      document.getElementById("f-login-user").value = "";
+      document.getElementById("f-login-pass").value = "";
+      document.getElementById("login-error").textContent = "";
+      showView("login");
+      document.getElementById("f-login-user").focus();
+    }
   });
-
-  if (localStorage.getItem("auth_ok") === "1") {
-    bootApp();
-  } else {
-    document.getElementById("f-login-user").focus();
-  }
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

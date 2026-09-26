@@ -173,6 +173,12 @@ button {
   flex-shrink: 0;
 }
 .icon-btn-round:active { transform: scale(0.94); }
+.icon-btn-round.inverse {
+  background: var(--card);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
 
 .search-bar {
   height: 44px;
@@ -471,6 +477,35 @@ button {
 .stepper { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 12px; background: var(--bg); }
 .stepper-btn { width: 30px; height: 30px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--accent); font-weight: 700; }
 .stepper-val { font-size: 16px; font-weight: 700; }
+
+.hours-display {
+  height: 52px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.keypad-key {
+  height: 50px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.keypad-key:active { background: var(--accent-light); }
+.keypad-key-alt { color: var(--accent); }
 
 .total-pill { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 12px; background: var(--accent-light); }
 .total-pill span:first-child { font-size: 14px; font-weight: 600; color: #6B4A2A; }

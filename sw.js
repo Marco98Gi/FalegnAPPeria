@@ -1,4 +1,4 @@
-const CACHE_NAME = "app-lavori-falegnameria-v1";
+const CACHE_NAME = "app-lavori-falegnameria-v2";
 const ASSETS = [
   "./",
   "./index.html",
