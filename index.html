@@ -15,8 +15,29 @@
 <body>
 <div id="app">
 
+  <!-- ============ LOGIN ============ -->
+  <section id="view-login" class="view active">
+    <div class="login-wrap">
+      <div class="login-card">
+        <img src="icons/icon-512.png" alt="" class="login-logo">
+        <div class="login-title">App Lavori</div>
+        <div class="login-sub">Accesso riservato — Falegnameria Gianni</div>
+        <div style="margin-top:20px;">
+          <div class="field-label">Utente</div>
+          <input class="field-input" id="f-login-user" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div style="margin-top:12px;">
+          <div class="field-label">Password</div>
+          <input class="field-input" id="f-login-pass" type="password" autocomplete="current-password">
+        </div>
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-primary" id="btn-login" style="margin-top:16px;">Accedi</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ HOME ============ -->
-  <section id="view-home" class="view active">
+  <section id="view-home" class="view">
     <div class="home-header">
       <div class="home-title-row">
         <h1>Lavori</h1>
@@ -141,6 +162,11 @@
         <button class="btn-primary" id="btn-export">Esporta backup</button>
         <label class="btn-secondary" for="import-file" style="cursor:pointer;">Importa backup</label>
         <input type="file" id="import-file" accept="application/json" style="display:none;">
+      </div>
+      <div class="settings-section">
+        <h2>Accesso</h2>
+        <p>Sei entrato con le tue credenziali. Su un dispositivo condiviso puoi uscire manualmente.</p>
+        <button class="btn-secondary" id="btn-logout">Esci</button>
       </div>
       <div class="settings-section">
         <h2>Informazioni</h2>

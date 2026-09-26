@@ -100,6 +100,53 @@ button {
   gap: 8px;
 }
 
+/* ---------- Login ---------- */
+
+.login-wrap {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+.login-card {
+  width: 100%;
+  max-width: 320px;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 32px 24px;
+  text-align: center;
+}
+.login-logo {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+.login-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+.login-sub {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+.login-card .field-label {
+  text-align: left;
+}
+.login-error {
+  font-size: 13px;
+  color: var(--danger);
+  min-height: 18px;
+  margin-top: 10px;
+}
+.login-card .btn-primary {
+  width: 100%;
+}
+
 /* Lavori extra */
 .extra-section-header {
   font-size: 13px;

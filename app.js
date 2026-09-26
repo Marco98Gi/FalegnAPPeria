@@ -1221,12 +1221,66 @@
     e.target.value = "";
   });
 
+  /* ---------------- Login ---------------- */
+
+  const AUTH_HASH = "90acb1aa4a3122d41dbb4ad90c16e4f94c0462ec0169c5e35bd93268dbc630d6";
+
+  async function sha256Hex(str) {
+    const enc = new TextEncoder().encode(str);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function bootApp() {
+    showView("home");
+    renderHome();
+  }
+
+  async function tryLogin() {
+    const userEl = document.getElementById("f-login-user");
+    const passEl = document.getElementById("f-login-pass");
+    const errEl = document.getElementById("login-error");
+    const user = userEl.value.trim().toLowerCase();
+    const pass = passEl.value;
+    if (!user || !pass) { errEl.textContent = "Inserisci utente e password"; return; }
+    const hash = await sha256Hex(`${user}:${pass}`);
+    if (hash === AUTH_HASH) {
+      localStorage.setItem("auth_ok", "1");
+      errEl.textContent = "";
+      passEl.value = "";
+      bootApp();
+    } else {
+      errEl.textContent = "Utente o password errati";
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("auth_ok");
+    document.getElementById("f-login-user").value = "";
+    document.getElementById("f-login-pass").value = "";
+    document.getElementById("login-error").textContent = "";
+    showView("login");
+  }
+
+  document.getElementById("btn-login").addEventListener("click", tryLogin);
+  document.getElementById("f-login-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
+  document.getElementById("f-login-user").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("f-login-pass").focus(); }
+  });
+  document.getElementById("btn-logout").addEventListener("click", logout);
+
   /* ---------------- Boot ---------------- */
 
-  openDB().then(renderHome).catch((err) => {
+  openDB().catch((err) => {
     console.error("Errore apertura database", err);
     showToast("Errore nell'apertura del database");
   });
+
+  if (localStorage.getItem("auth_ok") === "1") {
+    bootApp();
+  } else {
+    document.getElementById("f-login-user").focus();
+  }
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
