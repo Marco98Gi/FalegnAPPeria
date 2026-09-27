@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #F2F2F7; --card: #FFFFFF; --sep: rgba(60,60,67,0.29);
+    --label: #1C1C1E; --label2: #8E8E93; --accent: #B4652E; --accent-soft: rgba(180,101,46,0.12);
+    --warn-bg: rgba(200,138,46,0.15); --warn-ink: #8A5A12;
+  }
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  .phone { width: 390px; height: 844px; background: var(--bg); color: var(--label); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  .header { background: var(--bg); padding: 10px 8px 8px 8px; }
+  .header-row { display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+  .back { color: var(--accent); display: flex; align-items: center; gap: 2px; font-size: 17px; }
+  .titles { flex: 1; text-align: center; margin-right: 28px; }
+  .job-name { font-size: 17px; font-weight: 600; }
+  .job-client { font-size: 12.5px; color: var(--label2); }
+  .status-pill { align-self: center; margin: 10px auto 0 auto; padding: 4px 12px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-ink); font-size: 12px; font-weight: 700; width: fit-content; }
+  .segmented { display: flex; background: rgba(118,118,128,0.12); border-radius: 9px; padding: 2px; gap: 2px; margin: 12px 16px 0 16px; }
+  .segmented div { flex: 1; text-align: center; padding: 7px 0; border-radius: 7px; font-size: 13px; font-weight: 600; color: rgba(60,60,67,0.6); }
+  .segmented div.active { background: #fff; box-shadow: 0 1px 2.5px rgba(0,0,0,0.18); color: var(--accent); }
+
+  .scroll { flex: 1; overflow: hidden; }
+  .section-header { font-size: 13px; font-weight: 600; color: var(--label2); text-transform: uppercase; letter-spacing: 0.3px; margin: 20px 20px 6px 20px; }
+  .group { background: var(--card); margin: 0 16px; border-radius: 12px; overflow: hidden; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 0.6px solid var(--sep); }
+  .row:last-child { border-bottom: none; }
+  .avatar { width: 34px; height: 34px; border-radius: 999px; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .row-main { flex: 1; min-width: 0; }
+  .row-title { font-size: 15.5px; font-weight: 600; }
+  .row-sub { font-size: 12.5px; color: var(--label2); margin-top: 1px; }
+  .row-trail { text-align: right; flex-shrink: 0; }
+  .amount { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .amount-sub { font-size: 12.5px; color: var(--label2); font-variant-numeric: tabular-nums; }
+
+  .totals { margin: 14px 16px 0 16px; background: var(--card); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .totals .label { font-size: 13.5px; color: var(--label2); }
+  .totals .value { font-size: 16px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+  .fab { position: absolute; right: 20px; bottom: 24px; width: 52px; height: 52px; border-radius: 999px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(180,101,46,0.35); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="header">
+    <div class="header-row">
+      <div class="back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Lavori</span></div>
+      <div class="titles"><div class="job-name">Libreria soggiorno</div><div class="job-client">Sig.ra Bianchi</div></div>
+    </div>
+    <div class="status-pill">In lavorazione</div>
+    <div class="segmented"><div>Timeline</div><div>Documenti</div><div class="active">Ore</div><div>Materiali</div></div>
+  </div>
+  <div class="scroll">
+    <div class="section-header">Ore registrate</div>
+    <div class="group">
+      <div class="row">
+        <div class="avatar" style="background:#B4652E;">F</div>
+        <div class="row-main"><div class="row-title">Fabrizio</div><div class="row-sub">25 ago 2026</div></div>
+        <div class="row-trail"><div class="amount">6 h</div><div class="amount-sub">€150,00</div></div>
+      </div>
+      <div class="row">
+        <div class="avatar" style="background:#6B7F5B;">L</div>
+        <div class="row-main"><div class="row-title">Luigi</div><div class="row-sub">25 ago 2026</div></div>
+        <div class="row-trail"><div class="amount">4 h</div><div class="amount-sub">€100,00</div></div>
+      </div>
+      <div class="row">
+        <div class="avatar" style="background:#B4652E;">F</div>
+        <div class="row-main"><div class="row-title">Fabrizio</div><div class="row-sub">26 ago 2026</div></div>
+        <div class="row-trail"><div class="amount">7,5 h</div><div class="amount-sub">€187,50</div></div>
+      </div>
+      <div class="row">
+        <div class="avatar" style="background:#8B4A3A;">M</div>
+        <div class="row-main"><div class="row-title">Marco</div><div class="row-sub">27 ago 2026 · €30/h</div></div>
+        <div class="row-trail"><div class="amount">2 h</div><div class="amount-sub">€60,00</div></div>
+      </div>
+    </div>
+    <div class="totals"><div class="label">Totale ore <strong style="color:var(--label)">19,5 h</strong></div><div class="value">€497,50</div></div>
+    <div class="fab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+  </div>
+</div>
+</body>
+</html>

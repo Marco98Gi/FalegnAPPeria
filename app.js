@@ -41,6 +41,13 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     "Fatturato": "status-fatturato",
     "Lavoro extra": "status-preventivo"
   };
+  const STATUS_DOT = {
+    "Preventivo inviato": "gray",
+    "In lavorazione": "amber",
+    "Consegna": "terra",
+    "Concluso": "green",
+    "Fatturato": "brand"
+  };
 
   const PREDEFINED_EVENTS = [
     "Preventivo inviato",
@@ -230,6 +237,96 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
   }
 
+  // Griglia di righe con "scorri per eliminare" (stile iOS). opts:
+  //   onTap(id)     - tocco su una riga chiusa (opzionale)
+  //   onDelete(id)  - tocco sul pulsante rosso "Elimina" rivelato dallo scorrimento
+  const SWIPE_WIDTH = 84;
+  function enableSwipeToDelete(containerEl, opts) {
+    // Rieseguibile in sicurezza: aggiorna solo i callback (onTap/onDelete possono
+    // riferirsi a un lavoro diverso ad ogni nuovo render), senza duplicare i listener DOM.
+    containerEl.__swipeOpts = opts;
+    if (containerEl.__swipeWired) return;
+    containerEl.__swipeWired = true;
+    const getOpts = () => containerEl.__swipeOpts || {};
+    let openWrap = null;
+    let active = null;
+
+    function setX(row, x) { row.style.transform = `translateX(${x}px)`; }
+    function closeWrap(wrap, animate) {
+      const row = wrap.querySelector(".row");
+      if (!row) return;
+      row.style.transition = animate ? "transform 0.18s ease" : "none";
+      setX(row, 0);
+      wrap.classList.remove("open");
+    }
+    function openWrapFn(wrap) {
+      const row = wrap.querySelector(".row");
+      if (!row) return;
+      row.style.transition = "transform 0.18s ease";
+      setX(row, -SWIPE_WIDTH);
+      wrap.classList.add("open");
+    }
+
+    containerEl.addEventListener("pointerdown", (e) => {
+      const wrap = e.target.closest(".row-wrap");
+      if (!wrap || !containerEl.contains(wrap)) return;
+      if (openWrap && openWrap !== wrap) closeWrap(openWrap, true);
+      const row = wrap.querySelector(".row");
+      if (!row) return;
+      row.style.transition = "none";
+      active = {
+        wrap, row,
+        startX: e.clientX, startY: e.clientY,
+        baseX: wrap.classList.contains("open") ? -SWIPE_WIDTH : 0,
+        dragging: false, currentX: null, pointerId: e.pointerId
+      };
+    });
+    containerEl.addEventListener("pointermove", (e) => {
+      if (!active || active.pointerId !== e.pointerId) return;
+      const dx = e.clientX - active.startX;
+      const dy = e.clientY - active.startY;
+      if (!active.dragging) {
+        if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) {
+          active.dragging = true;
+          active.row.setPointerCapture && active.row.setPointerCapture(e.pointerId);
+        } else if (Math.abs(dy) > 6) {
+          active = null;
+          return;
+        } else {
+          return;
+        }
+      }
+      let x = active.baseX + dx;
+      x = Math.max(-SWIPE_WIDTH, Math.min(0, x));
+      active.currentX = x;
+      setX(active.row, x);
+    });
+    function endDrag(e) {
+      if (!active || (e.pointerId !== undefined && active.pointerId !== e.pointerId)) return;
+      const { wrap, row, dragging, currentX, baseX } = active;
+      row.style.transition = "transform 0.18s ease";
+      if (dragging) {
+        const finalX = currentX !== null ? currentX : baseX;
+        if (finalX < -(SWIPE_WIDTH / 2)) { openWrapFn(wrap); openWrap = wrap; }
+        else { closeWrap(wrap, true); if (openWrap === wrap) openWrap = null; }
+      } else {
+        const id = wrap.dataset.id;
+        if (e.target.closest(".swipe-action")) {
+          if (openWrap === wrap) openWrap = null;
+          getOpts().onDelete && getOpts().onDelete(id);
+        } else if (wrap.classList.contains("open")) {
+          closeWrap(wrap, true);
+          if (openWrap === wrap) openWrap = null;
+        } else {
+          getOpts().onTap && getOpts().onTap(id);
+        }
+      }
+      active = null;
+    }
+    containerEl.addEventListener("pointerup", endDrag);
+    containerEl.addEventListener("pointercancel", endDrag);
+  }
+
   /* ---------------- State ---------------- */
 
   const state = {
@@ -329,69 +426,40 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     const listEl = document.getElementById("job-list");
     let html = "";
 
+    function rowHtml(j, isExtra) {
+      const title = isExtra ? escapeHtml(j.cliente) : (j.titolo ? `${escapeHtml(j.titolo)} — ${escapeHtml(j.cliente)}` : escapeHtml(j.cliente));
+      const dot = isExtra ? "" : `<span class="dot ${STATUS_DOT[j.stato] || "gray"}"></span>`;
+      return `
+        <div class="row-wrap" data-id="${j.id}">
+          <div class="swipe-action">Elimina</div>
+          <div class="row">
+            <div class="row-main"><div class="row-title">${title}</div></div>
+            <div class="row-trail">${dot}${ICONS.chevronRight}</div>
+          </div>
+        </div>`;
+    }
+
     if (filtered.length === 0) {
       html += `<div class="empty-state">${jobs.length === 0 ? "Nessun lavoro ancora.<br>Tocca + per crearne uno." : "Nessun lavoro trovato."}</div>`;
     } else {
-      const cards = await Promise.all(filtered.map(async (j) => {
-        const cost = await computeJobCost(j.id);
-        const preventivo = Number(j.preventivo) || 0;
-        const pct = preventivo > 0 ? Math.min(100, Math.round((cost.total / preventivo) * 100)) : 0;
-        const over = preventivo > 0 && cost.total > preventivo;
-        const title = j.titolo ? `${escapeHtml(j.titolo)} — ${escapeHtml(j.cliente)}` : escapeHtml(j.cliente);
-        return `
-          <div class="job-card" data-job-id="${j.id}">
-            <button class="job-card-delete" data-delete-job="${j.id}" aria-label="Elimina lavoro">${ICONS.x}</button>
-            <div class="job-card-top">
-              <div class="job-card-title">${title}</div>
-              <div class="status-badge ${STATUS_CLASS[j.stato] || "status-preventivo"}">${escapeHtml(j.stato)}</div>
-            </div>
-            <div class="job-card-meta">Ultima attività: ${j.updatedAt ? formatDateISO(j.updatedAt) : "—"}</div>
-            <div class="cost-row">
-              <span>Costi finora <strong>${formatEUR(cost.total)}</strong></span>
-              <span>${preventivo > 0 ? "Preventivo " + formatEUR(preventivo) : "Nessun preventivo"}</span>
-            </div>
-            <div class="progress-track"><div class="progress-fill ${over ? "over" : ""}" style="width:${preventivo > 0 ? Math.max(pct, cost.total > 0 ? 4 : 0) : 0}%"></div></div>
-          </div>`;
-      }));
-      html += cards.join("");
+      html += `<div class="section-header">Lavori</div><div class="group">` + filtered.map((j) => rowHtml(j, false)).join("") + `</div>`;
     }
 
     if (filteredExtra.length > 0) {
-      const extraCards = await Promise.all(filteredExtra.map(async (j) => {
-        const cost = await computeJobCost(j.id);
-        const hours = await dbAll("hours", "jobId", j.id);
-        const totalH = hours.reduce((s, h) => s + (Number(h.ore) || 0), 0);
-        return `
-          <div class="job-card extra" data-job-id="${j.id}">
-            <button class="job-card-delete" data-delete-job="${j.id}" aria-label="Elimina lavoro">${ICONS.x}</button>
-            <div class="job-card-top">
-              <div class="job-card-title">${escapeHtml(j.cliente)}</div>
-            </div>
-            <div class="job-card-meta">Ultima attività: ${j.updatedAt ? formatDateISO(j.updatedAt) : "—"}</div>
-            <div class="cost-row">
-              <span>Ore totali <strong>${formatNum(totalH)} h</strong></span>
-              <span>${formatEUR(cost.total)}</span>
-            </div>
-          </div>`;
-      }));
-      html += `<div class="extra-section-header">Lavori extra</div>` + extraCards.join("");
+      html += `<div class="section-header">Lavori extra</div><div class="group">` + filteredExtra.map((j) => rowHtml(j, true)).join("") + `</div>`;
     }
 
     listEl.innerHTML = html;
-    listEl.querySelectorAll(".job-card").forEach((card) => {
-      card.addEventListener("click", () => openJob(card.dataset.jobId));
-    });
-    listEl.querySelectorAll("[data-delete-job]").forEach((btn) => {
-      btn.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.deleteJob;
+    enableSwipeToDelete(listEl, {
+      onTap: (id) => openJob(id),
+      onDelete: async (id) => {
         const job = await dbGet("jobs", id);
         const name = job ? (job.extra ? job.cliente : jobDisplayName(job)) : "questo lavoro";
         if (!confirm(`Eliminare definitivamente "${name}" e tutti i suoi dati (eventi, ore, materiali, documenti)?`)) return;
         await deleteJobCascade(id);
         await renderHome();
         showToast("Lavoro eliminato");
-      });
+      }
     });
   }
 
@@ -550,25 +618,28 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
       listEl.innerHTML = `<div class="empty-state" style="padding:20px 0;text-align:left;">Nessun evento ancora.<br>Tocca + per aggiungere il primo.</div>`;
       return;
     }
-    listEl.innerHTML = events.map((ev, i) => {
+    const rows = events.map((ev, i) => {
       const isLatest = i === events.length - 1;
       const isDone = /accettat|conclus|final/i.test(ev.label);
       return `
-        <div class="timeline-item">
-          <div class="timeline-dot ${isDone ? "done" : ""} ${isLatest ? "latest" : ""}">${isDone ? ICONS.check : ""}</div>
-          <div style="flex:1;">
-            <div class="timeline-label">${escapeHtml(ev.label)}</div>
-            <div class="timeline-date">${formatDateISO(ev.date)}${isLatest ? " · più recente" : ""}</div>
+        <div class="row-wrap" data-id="${ev.id}">
+          <div class="swipe-action">Elimina</div>
+          <div class="row t-row">
+            <div class="t-rail"><div class="t-dot ${isDone ? "done" : ""} ${isLatest ? "latest" : ""}"></div>${i < events.length - 1 ? '<div class="t-line"></div>' : ""}</div>
+            <div class="row-main">
+              <div class="t-label">${escapeHtml(ev.label)}</div>
+              <div class="t-date">${formatDateISO(ev.date)}${isLatest ? " · più recente" : ""}</div>
+            </div>
           </div>
-          <button class="timeline-del" data-del-event="${ev.id}">${ICONS.trash}</button>
         </div>`;
     }).join("");
-    listEl.querySelectorAll("[data-del-event]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+    listEl.innerHTML = `<div class="section-header">Cronologia</div><div class="group timeline-group">${rows}</div>`;
+    enableSwipeToDelete(listEl, {
+      onDelete: async (id) => {
         if (!confirm("Eliminare questo evento?")) return;
-        await dbDelete("events", btn.dataset.delEvent);
+        await dbDelete("events", id);
         await renderTimeline(jobId);
-      });
+      }
     });
   }
 
@@ -821,7 +892,7 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
         <div class="sheet-grabber"></div>
         <div class="sheet-title">${escapeHtml(note.titolo || "Nota")}</div>
         <div class="form-scroll">
-          <div class="timeline-date" style="margin-top:-8px;">${formatDateISO((note.createdAt || "").slice(0, 10))}</div>
+          <div class="t-date" style="margin-top:-8px;">${formatDateISO((note.createdAt || "").slice(0, 10))}</div>
           <div style="white-space:pre-wrap;font-size:15px;line-height:1.5;">${escapeHtml(note.testo || "")}</div>
           <button class="btn-primary" id="btn-edit-note">Modifica</button>
           <button class="btn-secondary" id="btn-delete-note" style="color:var(--danger);border-color:var(--danger-bg);">Elimina nota</button>
@@ -870,39 +941,38 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     if (hours.length === 0) {
       listEl.innerHTML = `<div class="empty-state" style="padding:30px 0;">Nessuna ora registrata ancora.</div>`;
     } else {
-      listEl.innerHTML = hours.map((h) => {
+      const rows = hours.map((h) => {
         const initial = (h.operatore || "?").charAt(0).toUpperCase();
         const color = OPERATOR_COLOR[h.operatore] || "var(--ink-muted)";
         const rowTotal = (Number(h.ore) || 0) * (Number(h.costoOrario) || 0);
         return `
-          <div class="entry-row">
-            <div class="entry-left">
+          <div class="row-wrap" data-id="${h.id}">
+            <div class="swipe-action">Elimina</div>
+            <div class="row">
               <div class="entry-avatar" style="background:${color}">${initial}</div>
-              <div>
-                <div class="entry-title">${escapeHtml(h.operatore)}</div>
-                <div class="entry-sub">${formatDateISO(h.date)}${h.costoOrario !== DEFAULT_RATE ? " · €" + formatNum(h.costoOrario) + "/h" : ""}</div>
+              <div class="row-main">
+                <div class="row-title">${escapeHtml(h.operatore)}</div>
+                <div class="row-sub">${formatDateISO(h.date)}${h.costoOrario !== DEFAULT_RATE ? " · €" + formatNum(h.costoOrario) + "/h" : ""}</div>
               </div>
-            </div>
-            <div class="entry-right">
-              <div>
+              <div class="row-trail entry-amount">
                 <div class="amount">${formatNum(h.ore)} h</div>
-                <div class="sub">${formatEUR(rowTotal)}</div>
+                <div class="row-sub">${formatEUR(rowTotal)}</div>
               </div>
-              <button class="entry-del" data-del-hours="${h.id}">${ICONS.trash}</button>
             </div>
           </div>`;
       }).join("");
+      listEl.innerHTML = `<div class="section-header">Ore registrate</div><div class="group">${rows}</div>`;
     }
     const totalH = hours.reduce((s, h) => s + (Number(h.ore) || 0), 0);
     const totalCost = hours.reduce((s, h) => s + (Number(h.ore) || 0) * (Number(h.costoOrario) || 0), 0);
     document.getElementById("hours-total-h").textContent = formatNum(totalH) + " h";
     document.getElementById("hours-total-cost").textContent = formatEUR(totalCost);
-    listEl.querySelectorAll("[data-del-hours]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+    enableSwipeToDelete(listEl, {
+      onDelete: async (id) => {
         if (!confirm("Eliminare questa registrazione ore?")) return;
-        await dbDelete("hours", btn.dataset.delHours);
+        await dbDelete("hours", id);
         await renderOre(jobId);
-      });
+      }
     });
   }
 
@@ -1088,42 +1158,38 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
     if (materials.length === 0) {
       listEl.innerHTML = `<div class="empty-state" style="padding:30px 0;">Nessun acquisto registrato ancora.</div>`;
     } else {
-      listEl.innerHTML = materials.map((m) => {
+      const rows = materials.map((m) => {
         const pending = m.stato === "ordinato";
         const rowTotal = (Number(m.quantita) || 0) * (Number(m.costoUnitario) || 0);
         return `
-          <div class="entry-row ${pending ? "pending" : ""}" ${pending ? `data-arrive-mat="${m.id}"` : ""}>
-            <div class="entry-left">
+          <div class="row-wrap" data-id="${m.id}">
+            <div class="swipe-action">Elimina</div>
+            <div class="row ${pending ? "pending" : ""}">
               <div class="entry-icon">${materialIcon(m.categoria)}</div>
-              <div>
-                <div class="entry-title">${escapeHtml(m.descrizione)}</div>
-                <div class="entry-sub">${formatNum(m.quantita)} ${escapeHtml(m.unita || "")}${pending ? ' · <span class="status-badge status-preventivo" style="padding:2px 8px;">Ordinato</span>' : ""}</div>
+              <div class="row-main">
+                <div class="row-title">${escapeHtml(m.descrizione)}</div>
+                <div class="row-sub">${formatNum(m.quantita)} ${escapeHtml(m.unita || "")}${pending ? ' <span class="pending-badge">Ordinato</span>' : ""}</div>
               </div>
-            </div>
-            <div class="entry-right">
-              <div class="amount">${pending ? "—" : formatEUR(rowTotal)}</div>
-              <button class="entry-del" data-del-mat="${m.id}">${ICONS.trash}</button>
+              <div class="row-trail"><div class="amount">${pending ? "—" : formatEUR(rowTotal)}</div></div>
             </div>
           </div>`;
       }).join("");
+      listEl.innerHTML = `<div class="section-header">Acquisti</div><div class="group">${rows}</div>`;
     }
     const totalCost = materials
       .filter((m) => m.stato !== "ordinato")
       .reduce((s, m) => s + (Number(m.quantita) || 0) * (Number(m.costoUnitario) || 0), 0);
     document.getElementById("materials-total-cost").textContent = formatEUR(totalCost);
-    listEl.querySelectorAll("[data-del-mat]").forEach((btn) => {
-      btn.addEventListener("click", async (e) => {
-        e.stopPropagation();
+    enableSwipeToDelete(listEl, {
+      onTap: async (id) => {
+        const m = await dbGet("materials", id);
+        if (m && m.stato === "ordinato") openMaterialArrivalForm(jobId, m);
+      },
+      onDelete: async (id) => {
         if (!confirm("Eliminare questo acquisto?")) return;
-        await dbDelete("materials", btn.dataset.delMat);
+        await dbDelete("materials", id);
         await renderMateriali(jobId);
-      });
-    });
-    listEl.querySelectorAll("[data-arrive-mat]").forEach((row) => {
-      row.addEventListener("click", async () => {
-        const m = await dbGet("materials", row.dataset.arriveMat);
-        if (m) openMaterialArrivalForm(jobId, m);
-      });
+      }
     });
   }
 
@@ -1334,8 +1400,6 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
 
   /* ---------------- Wiring ---------------- */
 
-  document.getElementById("btn-new-job").addEventListener("click", openNewJobSheet);
-  document.getElementById("btn-quick-hours").addEventListener("click", openQuickHoursSheet);
   document.getElementById("btn-back-home").addEventListener("click", goHome);
   document.getElementById("btn-back-home-2").addEventListener("click", goHome);
 
@@ -1344,6 +1408,7 @@ enableIndexedDbPersistence(fsdb).catch(() => { /* offline cache non disponibile 
       const target = btn.dataset.nav;
       if (target === "home") goHome();
       else if (target === "new") openNewJobSheet();
+      else if (target === "ore") openQuickHoursSheet();
       else if (target === "settings") { showView("settings"); renderSettings(); }
     });
   });

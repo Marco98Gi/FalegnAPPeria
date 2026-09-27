@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #F2F2F7;
+    --card: #FFFFFF;
+    --sep: rgba(60,60,67,0.29);
+    --label: #1C1C1E;
+    --label2: #8E8E93;
+    --accent: #B4652E;
+    --accent-soft: rgba(180,101,46,0.12);
+  }
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  .phone {
+    width: 390px; height: 844px; background: var(--bg); color: var(--label);
+    display: flex; flex-direction: column; overflow: hidden; position: relative;
+  }
+  .nav { padding: 12px 20px 10px 20px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
+  .nav-top { display: flex; align-items: center; justify-content: space-between; }
+  .large-title { font-size: 34px; font-weight: 700; letter-spacing: 0.2px; }
+  .nav-actions { display: flex; gap: 10px; }
+  .circle-btn {
+    width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  }
+  .circle-btn.fill { background: var(--accent); color: #fff; }
+  .circle-btn.tint { background: var(--accent-soft); color: var(--accent); }
+  .search {
+    height: 36px; border-radius: 10px; background: rgba(118,118,128,0.12);
+    display: flex; align-items: center; gap: 6px; padding: 0 10px; color: var(--label2); font-size: 15px;
+  }
+  .segmented {
+    display: flex; background: rgba(118,118,128,0.12); border-radius: 9px; padding: 2px; gap: 2px;
+  }
+  .segmented div {
+    flex: 1; text-align: center; padding: 6px 0; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--label);
+  }
+  .segmented div.active { background: #fff; box-shadow: 0 1px 2.5px rgba(0,0,0,0.18); color: var(--accent); }
+  .segmented div:not(.active) { color: rgba(60,60,67,0.6); }
+
+  .scroll { flex: 1; overflow: hidden; padding: 4px 0 0 0; }
+  .section-header { font-size: 13px; font-weight: 600; color: var(--label2); text-transform: uppercase; letter-spacing: 0.3px; margin: 20px 20px 6px 20px; }
+  .group { background: var(--card); margin: 0 16px; border-radius: 12px; overflow: hidden; }
+  .row-wrap { position: relative; background: #FF3B30; overflow: hidden; }
+  .swipe-action {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 84px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 15px; font-weight: 600;
+  }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--card); position: relative; border-bottom: 0.6px solid var(--sep); }
+  .row.swiped { transform: translateX(-84px); }
+  .row-wrap:last-child .row { border-bottom: none; }
+  .row-main { flex: 1; min-width: 0; }
+  .row-title { font-size: 16px; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-sub { font-size: 13px; color: var(--label2); margin-top: 2px; }
+  .row-trail { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; }
+  .dot.amber { background: #C88A2E; }
+  .dot.terra { background: #B5523A; }
+  .dot.green { background: #4C9A4C; }
+  .dot.gray { background: #B7B7BC; }
+  .amount { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chev { color: #C7C7CC; }
+
+  .tabbar {
+    height: 82px; padding-bottom: 20px; display: flex; align-items: center; justify-content: space-around;
+    background: rgba(249,249,249,0.82); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 0.6px solid var(--sep);
+  }
+  .tabitem { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #9a9a9e; }
+  .tabitem.active { color: var(--accent); }
+  .tabitem span { font-size: 10.5px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="nav">
+    <div class="nav-top">
+      <div class="large-title">Lavori</div>
+    </div>
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Cerca cliente o lavoro
+    </div>
+    <div class="segmented">
+      <div class="active">Tutti</div>
+      <div>In lavorazione</div>
+      <div>Concluso</div>
+    </div>
+  </div>
+
+  <div class="scroll">
+    <div class="section-header">Lavori</div>
+    <div class="group">
+      <div class="row-wrap">
+        <div class="row">
+          <div class="row-main">
+            <div class="row-title">Libreria soggiorno — Sig.ra Bianchi</div>
+          </div>
+          <div class="row-trail"><span class="dot amber"></span><svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+      <div class="row-wrap">
+        <div class="row">
+          <div class="row-main">
+            <div class="row-title">Cucina su misura — Rossi Costruzioni</div>
+          </div>
+          <div class="row-trail"><span class="dot terra"></span><svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+      <div class="row-wrap">
+        <div class="swipe-action">Elimina</div>
+        <div class="row swiped">
+          <div class="row-main">
+            <div class="row-title">Tavolo + 6 sedie — Sig. Verdi</div>
+          </div>
+          <div class="row-trail"><span class="dot green"></span><svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+      <div class="row-wrap">
+        <div class="row">
+          <div class="row-main">
+            <div class="row-title">Ristrutturazione infissi — Sig. Neri</div>
+          </div>
+          <div class="row-trail"><span class="dot gray"></span><svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">Lavori extra</div>
+    <div class="group">
+      <div class="row">
+        <div class="row-main">
+          <div class="row-title">Pulizia magazzino</div>
+        </div>
+        <div class="row-trail"><svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tabitem active">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="tabitem">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Nuovo lavoro</span>
+    </div>
+    <div class="tabitem">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="13" r="7.5"/><polyline points="9.5 9 9.5 13 12.5 15"/><line x1="18" y1="1.5" x2="18" y2="8.5" stroke-width="2.6"/><line x1="14" y1="5" x2="22" y2="5" stroke-width="2.6"/></svg>
+      <span>Ore</span>
+    </div>
+    <div class="tabitem">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Impostazioni</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

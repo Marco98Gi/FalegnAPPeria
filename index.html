@@ -40,15 +40,9 @@
   <section id="view-home" class="view">
     <div class="home-header">
       <div class="home-title-row">
-        <h1>Lavori</h1>
-        <div class="home-title-actions">
-          <button class="icon-btn-round inverse" id="btn-quick-hours" aria-label="Registra ore">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="15" r="7"/><polyline points="9 11.5 9 15 11.5 16.5"/><line x1="18" y1="1" x2="18" y2="10" stroke-width="2.8"/><line x1="13.5" y1="5.5" x2="22.5" y2="5.5" stroke-width="2.8"/></svg>
-          </button>
-          <button class="icon-btn-round" id="btn-new-job" aria-label="Nuovo lavoro">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
+        <img src="icons/logo-mark.png" alt="" class="home-logo-mark">
+        <img src="icons/wordmark-gianni.png" alt="Falegnameria Gianni" class="home-wordmark">
+        <span class="home-title-spacer"></span>
       </div>
       <div class="search-bar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -72,6 +66,10 @@
       <button class="nav-item" data-nav="new">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>Nuovo lavoro</span>
+      </button>
+      <button class="nav-item" data-nav="ore">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="13" r="7.5"/><polyline points="9.5 9 9.5 13 12.5 15"/><line x1="18" y1="1.5" x2="18" y2="8.5" stroke-width="2.6"/><line x1="14" y1="5" x2="22" y2="5" stroke-width="2.6"/></svg>
+        <span>Ore</span>
       </button>
       <button class="nav-item" data-nav="settings">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -105,7 +103,6 @@
 
     <div class="tab-panel active" id="panel-timeline" data-panel="timeline">
       <div class="timeline-wrap">
-        <div class="timeline-line"></div>
         <div class="timeline-list" id="timeline-list"></div>
       </div>
       <button class="fab" data-add="event" aria-label="Aggiungi evento">

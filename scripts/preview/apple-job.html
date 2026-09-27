@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #F2F2F7;
+    --card: #FFFFFF;
+    --sep: rgba(60,60,67,0.29);
+    --label: #1C1C1E;
+    --label2: #8E8E93;
+    --accent: #B4652E;
+    --accent-soft: rgba(180,101,46,0.12);
+    --warn-bg: rgba(200,138,46,0.15);
+    --warn-ink: #8A5A12;
+  }
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  .phone {
+    width: 390px; height: 844px; background: var(--bg); color: var(--label);
+    display: flex; flex-direction: column; overflow: hidden; position: relative;
+  }
+
+  .header { background: var(--bg); padding: 10px 8px 8px 8px; }
+  .header-row { display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+  .back { color: var(--accent); display: flex; align-items: center; gap: 2px; font-size: 17px; }
+  .titles { flex: 1; text-align: center; margin-right: 28px; }
+  .job-name { font-size: 17px; font-weight: 600; }
+  .job-client { font-size: 12.5px; color: var(--label2); }
+  .status-pill {
+    align-self: center; margin: 10px auto 0 auto; padding: 4px 12px; border-radius: 999px;
+    background: var(--warn-bg); color: var(--warn-ink); font-size: 12px; font-weight: 700;
+  }
+
+  .segmented {
+    display: flex; background: rgba(118,118,128,0.12); border-radius: 9px; padding: 2px; gap: 2px;
+    margin: 12px 16px 0 16px;
+  }
+  .segmented div { flex: 1; text-align: center; padding: 7px 0; border-radius: 7px; font-size: 13px; font-weight: 600; color: rgba(60,60,67,0.6); }
+  .segmented div.active { background: #fff; box-shadow: 0 1px 2.5px rgba(0,0,0,0.18); color: var(--label); }
+
+  .scroll { flex: 1; overflow: hidden; position: relative; }
+  .section-header { font-size: 13px; font-weight: 600; color: var(--label2); text-transform: uppercase; letter-spacing: 0.3px; margin: 20px 20px 6px 20px; }
+
+  .timeline { margin: 0 16px; background: var(--card); border-radius: 12px; padding: 4px 16px; }
+  .t-row { display: flex; gap: 14px; padding: 14px 0; border-bottom: 0.6px solid var(--sep); position: relative; }
+  .t-row:last-child { border-bottom: none; }
+  .t-rail { width: 20px; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .t-dot { width: 9px; height: 9px; border-radius: 999px; background: var(--accent); margin-top: 5px; }
+  .t-dot.done { background: #34A853; }
+  .t-line { width: 1.4px; flex: 1; background: var(--sep); margin-top: 2px; }
+  .t-label { font-size: 15px; font-weight: 600; }
+  .t-date { font-size: 12.5px; color: var(--label2); margin-top: 1px; }
+
+  .fab {
+    position: absolute; right: 20px; bottom: 24px; width: 52px; height: 52px; border-radius: 999px;
+    background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 16px rgba(180,101,46,0.35);
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="header">
+    <div class="header-row">
+      <div class="back">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <span>Lavori</span>
+      </div>
+      <div class="titles">
+        <div class="job-name">Libreria soggiorno</div>
+        <div class="job-client">Sig.ra Bianchi</div>
+      </div>
+    </div>
+    <div class="status-pill" style="width:fit-content;">In lavorazione</div>
+    <div class="segmented">
+      <div class="active">Timeline</div>
+      <div>Documenti</div>
+      <div>Ore</div>
+      <div>Materiali</div>
+    </div>
+  </div>
+
+  <div class="scroll">
+    <div class="section-header">Cronologia</div>
+    <div class="timeline">
+      <div class="t-row">
+        <div class="t-rail"><div class="t-dot done"></div><div class="t-line"></div></div>
+        <div><div class="t-label">Preventivo accettato</div><div class="t-date">10 ago 2026</div></div>
+      </div>
+      <div class="t-row">
+        <div class="t-rail"><div class="t-dot"></div><div class="t-line"></div></div>
+        <div><div class="t-label">Presa in carico</div><div class="t-date">12 ago 2026</div></div>
+      </div>
+      <div class="t-row">
+        <div class="t-rail"><div class="t-dot"></div><div class="t-line"></div></div>
+        <div><div class="t-label">Ordine vernice effettuato</div><div class="t-date">18 ago 2026</div></div>
+      </div>
+      <div class="t-row">
+        <div class="t-rail"><div class="t-dot"></div><div class="t-line"></div></div>
+        <div><div class="t-label">Arrivo materiale — pannelli rovere</div><div class="t-date">22 ago 2026</div></div>
+      </div>
+      <div class="t-row">
+        <div class="t-rail"><div class="t-dot" style="box-shadow:0 0 0 4px var(--accent-soft);"></div></div>
+        <div><div class="t-label">Inizio lavorazione</div><div class="t-date">25 ago 2026 · più recente</div></div>
+      </div>
+    </div>
+
+    <div class="fab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+  </div>
+</div>
+</body>
+</html>
